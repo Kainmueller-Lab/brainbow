@@ -50,15 +50,6 @@ def call_denoise_per_sample(infn, in_key, out_folder, sigma_psd=0.05, clip_max=1
             chunks=True,
             compression="gzip"
         )
-        # convert to uint8 for visualization in fiji (?)
-        raw_denoised = (raw_denoised * 255).astype(np.uint8)
-        hout.create_dataset(
-            "volumes/raw_denoised_uint8",
-            data=raw_denoised,
-            dtype=np.uint8,
-            chunks=True,
-            compression="gzip"
-        )
 
 
 def main():
