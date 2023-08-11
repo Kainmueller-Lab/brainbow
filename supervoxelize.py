@@ -137,6 +137,8 @@ def call_supervoxelize_per_sample(infn, in_key, out_folder,
     sv_label, sv_image = supervoxelize(raw, seed_thresh=seed_thresh, 
             fg_thresh=fg_thresh, debug=debug, debug_dir=out_folder)
     
+    print("sv label: ", sv_label.dtype, sv_label.min(), sv_label.max())
+    print("sv image: ", sv_image.dtype, sv_image.min(), sv_image.max())
     # save supervoxel in hdf
     with h5py.File(outfn, 'w') as outf:
         outf.create_dataset(
@@ -148,8 +150,8 @@ def call_supervoxelize_per_sample(infn, in_key, out_folder,
         )
         outf.create_dataset(
                 "volumes/supervoxel_image",
-                data=sv_image.astype(np.uint8),
-                dtype=np.uint8,
+                data=sv_image,
+                dtype=sv_image.dtype,
                 chunks=True,
                 compression="gzip"
         )
@@ -170,14 +172,14 @@ def main():
             help="path to input folder")
     parser.add_argument("--out_folder", type=str, default=".",
             help="path to output folder")
-    parser.add_argument("--in_key", type=str, default="volumes/raw",
-            help="key to zarr input volume")
+    parser.add_argument("--in_key", type=str, default="volumes/raw_denoised",
+            help="key to hdf denoised input volume")
     parser.add_argument("--seed_thresh", type=float, default=0.05,
             help="threshold for watershed seed points")
     parser.add_argument("--fg_thresh", type=int, default=0.2,
             help="threshold for foreground mask")
     parser.add_argument("--debug", default=False,
-            action="store_true", help="threshold for foreground mask")
+            action="store_true", help="if yes, intermediate outputs are saved")
 
     args = parser.parse_args()
     # check that either input file or input folder is given
@@ -196,8 +198,8 @@ def main():
             call_supervoxelize_per_sample(infn, args.in_key, args.out_folder,
                     args.seed_thresh, args.fg_thresh, args.debug)
     else:
-        call_supervoxelize_per_sample(infn, in_key, out_folder, 
-                seed_thresh, fg_thresh, args.debug)
+        call_supervoxelize_per_sample(args.in_file, args.in_key, args.out_folder, 
+                args.seed_thresh, args.fg_thresh, args.debug)
         
 if __name__ == "__main__":
     main()

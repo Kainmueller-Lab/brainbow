@@ -1,0 +1,8 @@
+numpy
+scipy
+zarr
+h5py
+bm4d
+scikit-learn
+scikit-image
+opencv-python
