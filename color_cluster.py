@@ -190,7 +190,7 @@ def main():
             help="threshold to filter spatial distances")
     parser.add_argument("--thresh_c", type=float, default=8,
             help="threshold to filter color distances")
-    parser.add_argument("--pca_comps", type=int, default=0,
+    parser.add_argument("--pca_comps", type=int, default=50,
             help="number of components for pca, if 0 set automatically")
     parser.add_argument("--gmm_comps", type=int, default=50,
             help="number of components for gmm, if 0 set automatically")

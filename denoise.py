@@ -9,7 +9,7 @@ from bm4d import bm4d
 
 def denoise(vol, sigma_psd, clip_max=None):
     print("denoise with sigma psd %f and clip max %i" % (sigma_psd, clip_max))
-    # normalize raw
+    # clip raw and convert to float
     vol = vol.astype(np.float32)
     if clip_max is not None:
         vol = np.clip(vol, 0, clip_max)
@@ -19,10 +19,21 @@ def denoise(vol, sigma_psd, clip_max=None):
     # heads up: assuming channels first
     for i in range(3):
         print("denoising channel %i" % i)
-        vol_channel = bm4d(vol[i], sigma_psd)
+        vol_channel = vol[i]
+        # save current max value
+        max_channel = np.max(vol_channel)
+        # normalize channel
+        vol_channel = vol_channel / max_channel
+        # denoise
+        vol_channel = bm4d(vol_channel, sigma_psd)
+        print(vol_channel.min(), vol_channel.max())
+        vol_channel = np.clip(vol_channel, 0, 1)
+        print(vol_channel.min(), vol_channel.max(), max_channel)
+        # transform back to previous max value to not upscale channel
+        vol_channel = vol_channel * max_channel
         vol_denoised.append(vol_channel)
     vol_denoised = np.stack(vol_denoised)
-    vol_denoised = np.clip(vol_denoised, 0, 1)
+    #vol_denoised = np.clip(vol_denoised, 0, 1)
 
     return vol_denoised
 
