@@ -10,21 +10,21 @@ python reimplementation for brainbow neural tracing:
 - bm4d for each channel
 - call separately as it needs long time and a lot of RAM
 
-##(2) supervoxelize, reimplement from [2]
-###(2.1) watershed on sobel
-###(2.2) add thresholded foreground
+## (2) supervoxelize, reimplement from [2]
+### (2.1) watershed on sobel
+### (2.2) add thresholded foreground
 --> which color proximity function?
-###(2.3) split supervoxel with different colors
+### (2.3) split supervoxel with different colors
 --> not implemented yet
-###(2.4) demix/merge supervoxel
+### (2.4) demix/merge supervoxel
 --> not implemented yet
 
-##(3) GMM color cluster, from here [1]
+## (3) GMM color cluster, from here [1]
 - which color distance function?
 - how to define dimension d for feature X^(Nxd)?
 - how to define number of components for GMM?
 
-##(4) bridge skeletons
+## (4) bridge skeletons
 --> not implemented yet
 - should be simple to implement to verify which cluster should be connected
 - which distance threshold?
