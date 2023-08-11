@@ -5,6 +5,7 @@ import numpy as np
 import h5py
 from scipy import ndimage, spatial
 from skimage import io, filters, measure, segmentation, color
+import time
 
 
 # script to create supervoxels
@@ -68,7 +69,7 @@ def add_ridges(image, sv_label, sv_image, thresh=0.2, debug=False, debug_dir="")
         mip = np.max((image_grey * 255).astype(np.uint8), axis=0)
         io.imsave(os.path.join(debug_dir, "mip_grey_debug.png"), mip)
         mip = np.max((fg_mask * 255).astype(np.uint8), axis=0)
-        io.imsave(os.path.join(debug_dir, "mip_grey_debug.png"), mip)
+        io.imsave(os.path.join(debug_dir, "mip_fg_debug.png"), mip)
 
     # create kd tree for existing supervoxel
     # todo: would it make more sense to start with closest cc, and then update kdtree?
@@ -108,9 +109,12 @@ def add_ridges(image, sv_label, sv_image, thresh=0.2, debug=False, debug_dir="")
 
 def supervoxelize(image, seed_thresh=0.05, fg_thresh=0.2, debug=False, debug_dir=""):
     
+    start = time.time()
     sv_label, sv_image = watershed(image, seed_thresh, debug, debug_dir)
     sv_label, sv_image = add_ridges(image, sv_label, sv_image, fg_thresh, 
             debug, debug_dir)
+    stop = time.time()
+    print("supervoxelize done in %.2f" % (stop - start))
 
     return sv_label, sv_image
 
@@ -158,18 +162,42 @@ def call_supervoxelize_per_sample(infn, in_key, out_folder,
 
 
 def main():
-    in_folder = "/nrs/saalfeld/maisl/flylight_benchmark/brainbow/denoised/psd_0_05"
-    out_folder = "/nrs/saalfeld/maisl/flylight_benchmark/brainbow/supervoxel"
-    in_key = "volumes/raw_denoised"
-    in_files = glob(in_folder + "/*.hdf")
-    seed_thresh = 0.05
-    fg_thresh = 0.2
-    debug = True
+    # get input parameter
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--in_file", type=str, default=None,
+            help="path to input file")
+    parser.add_argument("--in_folder", type=str, default=None,
+            help="path to input folder")
+    parser.add_argument("--out_folder", type=str, default=".",
+            help="path to output folder")
+    parser.add_argument("--in_key", type=str, default="volumes/raw",
+            help="key to zarr input volume")
+    parser.add_argument("--seed_thresh", type=float, default=0.05,
+            help="threshold for watershed seed points")
+    parser.add_argument("--fg_thresh", type=int, default=0.2,
+            help="threshold for foreground mask")
+    parser.add_argument("--debug", default=False,
+            action="store_true", help="threshold for foreground mask")
 
-    for infn in in_files:
+    args = parser.parse_args()
+    # check that either input file or input folder is given
+    assert args.in_file is not None or args.in_folder is not None
+
+    #in_folder = "/nrs/saalfeld/maisl/flylight_benchmark/brainbow/denoised/psd_0_05"
+    #out_folder = "/nrs/saalfeld/maisl/flylight_benchmark/brainbow/supervoxel"
+    #in_key = "volumes/raw_denoised"
+    #in_files = glob(in_folder + "/*.hdf")
+    #seed_thresh = 0.05
+    #fg_thresh = 0.2
+    #debug = True
+
+    if args.in_folder is not None:
+        for infn in in_files:
+            call_supervoxelize_per_sample(infn, args.in_key, args.out_folder,
+                    args.seed_thresh, args.fg_thresh, args.debug)
+    else:
         call_supervoxelize_per_sample(infn, in_key, out_folder, 
-                seed_thresh, fg_thresh, debug)
-        exit()
+                seed_thresh, fg_thresh, args.debug)
         
 if __name__ == "__main__":
     main()
