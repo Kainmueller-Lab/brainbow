@@ -122,6 +122,8 @@ def color_based_subdivision(
         debug (bool): save intermediate outputs for debugging
         debug_dir (str): directory to save intermediate outputs
         clustering (str): clustering algorithm to use, either "KMeans" or "SpectralClustering"
+    Returns:
+        sv_label_out (np.array): 3d supervoxel label with subdivided supervoxels
     """
     sv_label_out = np.copy(sv_label)
     # get all indices of each supervoxel
