@@ -4,6 +4,7 @@ import argparse
 import numpy as np
 import h5py
 from scipy import ndimage, spatial
+from sklearn import cluster
 from skimage import io, filters, measure, segmentation, color
 import time
 
@@ -107,12 +108,49 @@ def add_ridges(image, sv_label, sv_image, thresh=0.2, debug=False, debug_dir="")
     return sv_label, sv_image
 
 
-def supervoxelize(image, seed_thresh=0.05, fg_thresh=0.2, debug=False, debug_dir=""):
-    
+def color_based_subdivision(
+        image, sv_label, color_thresh=0.5, debug=False, debug_dir="", clustering="KMeans"
+    ):
+    """ Subdivide supervoxels based on color proximity. Check if the maximum difference in each
+    individual channel within a supervoxel is larger than color_thresh. If yes, use kmeans or 
+    hierarchical clustering to subdivide the supervoxel. Algorithm described on page 11 in
+    arxiv.org/abs/1611.00388
+    Args:
+        image (np.array): 3d image
+        sv_label (np.array): 3d supervoxel label
+        color_thresh (float): threshold for color proximity
+        debug (bool): save intermediate outputs for debugging
+        debug_dir (str): directory to save intermediate outputs
+        clustering (str): clustering algorithm to use, either "KMeans" or "SpectralClustering"
+    Returns:
+        sv_label_out (np.array): 3d supervoxel label with subdivided supervoxels
+    """
+    sv_label_out = np.copy(sv_label)
+    # get all indices of each supervoxel
+    indices = ndimage.value_indices(sv_label, ignore_value=0)
+    # make channels last
+    image = np.moveaxis(image, 0, -1)
+    for i, idx in indices.items():
+        img_slice = image[idx] # n x 3
+        max_dist = np.max(np.max(img_slice, axis=0) - np.min(img_slice, axis=0))
+        if max_dist > color_thresh:
+            # cluster image slice
+            c_algo = getattr(cluster, clustering)(n_clusters=2, random_state=0)
+            c_algo = c_algo.fit(img_slice)
+            new_labels = c_algo.labels_ + np.max(sv_label_out) + 1	
+            sv_label_out[idx] = new_labels
+    sv_label_out = measure.label(sv_label_out)
+    return sv_label_out
+
+
+def supervoxelize(
+        image, seed_thresh=0.05, fg_thresh=0.2, debug=False, debug_dir="", color_thresh=0.5,
+    ):
     start = time.time()
     sv_label, sv_image = watershed(image, seed_thresh, debug, debug_dir)
     sv_label, sv_image = add_ridges(image, sv_label, sv_image, fg_thresh, 
             debug, debug_dir)
+    sv_label = color_based_subdivision(image, sv_label, color_thresh, debug, debug_dir)
     stop = time.time()
     print("supervoxelize done in %.2f" % (stop - start))
 
